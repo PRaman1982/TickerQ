@@ -3,7 +3,8 @@
     <div class="login-card">
       <div class="login-header">
         <div class="logo-section">
-          <img src="@/assets/arcenox-logo.svg" alt="TickerQ" class="logo" />
+          <img src="https://www.rvcapital.com/wp-content/uploads/2024/01/rv-capital-logo-bw.svg"
+                alt="Chronos - RV Capital" class="logo" />
           <h1 class="app-title">TickerQ Dashboard</h1>
         </div>
         <p class="login-subtitle">Please authenticate to access the dashboard</p>
@@ -23,7 +24,7 @@
 
       <!-- Basic Auth Form -->
       <v-form
-        v-if="authMode === 'basic'"
+        v-if="authMode === 'basic' || authMode === 'customlogin'"
         ref="form"
         @submit.prevent="handleLogin"
         class="login-form"
@@ -70,6 +71,7 @@
           <v-icon start>mdi-login-variant</v-icon>
           {{ authStore.isLoading ? 'Signing In...' : 'Sign In' }}
         </v-btn>
+
 
         <div class="auth-help-text">
           <v-icon size="small" class="mr-1">mdi-information-outline</v-icon>

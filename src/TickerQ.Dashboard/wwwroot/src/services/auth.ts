@@ -12,15 +12,17 @@ declare global {
         mode: string;
         enabled: boolean;
         sessionTimeout: number;
+        customLoginUrl?: string;
       };
     };
   }
 }
 
 export interface AuthConfig {
-  mode: 'none' | 'basic' | 'apikey' | 'host' | 'custom';
+  mode: 'none' | 'basic' | 'apikey' | 'host' | 'custom' | 'customlogin';
   enabled: boolean;
   sessionTimeout: number;
+  customLoginUrl?: string;
 }
 
 export interface AuthStatus {
@@ -47,17 +49,18 @@ class AuthService {
     try {
       // Get auth configuration from window (injected by backend)
       const windowConfig = window.TickerQConfig?.auth;
-      
+
       if (!windowConfig) {
         throw new Error('No auth configuration found');
       }
-      
+
       this.config = {
-        mode: windowConfig.mode as 'none' | 'basic' | 'apikey' | 'host' | 'custom',
+        mode: windowConfig.mode as 'none' | 'basic' | 'apikey' | 'host' | 'custom' | 'customlogin',
         enabled: windowConfig.enabled,
-        sessionTimeout: windowConfig.sessionTimeout
+        sessionTimeout: windowConfig.sessionTimeout,
+        customLoginUrl: windowConfig.customLoginUrl
       };
-      
+
       // If no auth required, set as authenticated
       if (!this.config.enabled) {
         this.status = { authenticated: true, username: 'anonymous' };
@@ -89,12 +92,45 @@ class AuthService {
         return true;
       }
 
-      // Store credentials based on auth mode
-      this.storeCredentials(credentials);
+      // Handle custom login flow
+      if (this.config.mode === 'customlogin' && this.config.customLoginUrl) {
+        try {
+          const response = await fetch(this.config.customLoginUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: credentials.username,
+              password: credentials.password
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('Login failed');
+          }
+
+          const data = await response.json();
+          // Expecting { accessToken: "..." } or { token: "..." }
+          const token = data.access_token || '';
+
+          if (!token) {
+            throw new Error('No access token received');
+          }
+
+          // Store as API key (Bearer token)
+          this.storeCredentials({ apiKey: token });
+        } catch (error) {
+          console.error('Custom login failed:', error);
+          this.status = { authenticated: false, message: 'Invalid credentials' };
+          return false;
+        }
+      } else {
+        // Store credentials based on auth mode
+        this.storeCredentials(credentials);
+      }
 
       // Validate with backend
       const result = await this.validateCredentials();
-      
+
       if (result.authenticated) {
         this.status = result;
         return true;
@@ -152,15 +188,16 @@ class AuthService {
       case 'basic':
         const basicAuth = localStorage.getItem('tickerq_basic_auth');
         return basicAuth ? `Basic ${basicAuth}` : null;
-      
+
       case 'apikey':
+      case 'customlogin':
         const apiKey = localStorage.getItem('tickerq_api_key');
         return apiKey ? `Bearer ${apiKey}` : null;
-      
+
       case 'host':
         const hostAccessKey = localStorage.getItem('tickerq_host_access_key');
         return hostAccessKey || null;
-      
+
       default:
         return null;
     }
@@ -177,15 +214,16 @@ class AuthService {
     switch (this.config.mode) {
       case 'basic':
         return localStorage.getItem('tickerq_basic_auth');
-      
+
       case 'apikey':
+      case 'customlogin':
         const token = localStorage.getItem('tickerq_api_key');
         return token ? `Bearer:${token}` : null;
-      
+
       case 'host':
         const hostToken = localStorage.getItem('tickerq_host_access_key');
         return hostToken || null;
-      
+
       default:
         return null;
     }
@@ -195,22 +233,22 @@ class AuthService {
   private async validateCredentials(): Promise<AuthStatus> {
     try {
       const authHeader = this.getAuthHeader();
-      
+
       // Get the correct base URL with base path
       const config = window.TickerQConfig;
       const baseUrl = config?.backendDomain || config?.basePath || '/tickerq/dashboard';
       const url = `${baseUrl}/api/auth/validate`;
-      
+
       // Add timeout to prevent hanging
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-      
+
       const response = await fetch(url, {
         method: 'POST',
         headers: authHeader ? { 'Authorization': authHeader } : {},
         signal: controller.signal
       });
-      
+
       clearTimeout(timeoutId);
 
       if (response.ok) {
@@ -235,14 +273,14 @@ class AuthService {
   async validateStoredCredentials(): Promise<void> {
     const result = await this.validateCredentials();
     this.status = result;
-    
+
     if (!result.authenticated) {
       this.clearCredentials();
     }
   }
 
   private hasStoredCredentials(): boolean {
-    return !!(localStorage.getItem('tickerq_basic_auth') || 
+    return !!(localStorage.getItem('tickerq_basic_auth') ||
               localStorage.getItem('tickerq_api_key') ||
               localStorage.getItem('tickerq_host_access_key'));
   }
@@ -270,13 +308,14 @@ class AuthService {
           localStorage.setItem('tickerq_basic_auth', encoded);
         }
         break;
-      
+
       case 'apikey':
+      case 'customlogin':
         if (credentials.apiKey) {
           localStorage.setItem('tickerq_api_key', credentials.apiKey);
         }
         break;
-      
+
       case 'host':
         if (credentials.hostAccessKey) {
           localStorage.setItem('tickerq_host_access_key', credentials.hostAccessKey);
