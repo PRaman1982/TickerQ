@@ -45,6 +45,7 @@ public class AuthService : IAuthService
                 AuthMode.Basic => await AuthenticateBasicAsync(authHeader),
                 AuthMode.ApiKey => await AuthenticateApiKeyAsync(authHeader),
                 AuthMode.Custom => await AuthenticateCustomAsync(authHeader),
+                AuthMode.CustomLogin => await AuthenticateCustomAsync(authHeader),
                 AuthMode.Host => await AuthenticateHostAsync(context),
                 _ => AuthResult.Failure("Invalid authentication mode")
             };
@@ -62,7 +63,8 @@ public class AuthService : IAuthService
         {
             Mode = _config.Mode,
             IsEnabled = _config.IsEnabled,
-            SessionTimeoutMinutes = _config.SessionTimeoutMinutes
+            SessionTimeoutMinutes = _config.SessionTimeoutMinutes,
+            CustomLoginUrl = _config.CustomLoginUrl
         };
     }
 

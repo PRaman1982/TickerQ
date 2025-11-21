@@ -12,7 +12,7 @@ public interface IAuthService
     /// Check if the request is authenticated
     /// </summary>
     Task<AuthResult> AuthenticateAsync(HttpContext context);
-    
+
     /// <summary>
     /// Get authentication configuration for frontend
     /// </summary>
@@ -27,13 +27,13 @@ public class AuthResult
     public bool IsAuthenticated { get; set; }
     public string? Username { get; set; }
     public string? ErrorMessage { get; set; }
-    
+
     public static AuthResult Success(string? username = null) => new()
     {
         IsAuthenticated = true,
         Username = username ?? "user"
     };
-    
+
     public static AuthResult Failure(string? errorMessage = null) => new()
     {
         IsAuthenticated = false,
@@ -49,4 +49,5 @@ public class AuthInfo
     public AuthMode Mode { get; set; }
     public bool IsEnabled { get; set; }
     public int SessionTimeoutMinutes { get; set; }
+    public string? CustomLoginUrl { get; set; }
 }
