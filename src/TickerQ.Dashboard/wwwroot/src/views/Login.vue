@@ -3,9 +3,8 @@
     <div class="login-card">
       <div class="login-header">
         <div class="logo-section">
-          <img src="https://www.rvcapital.com/wp-content/uploads/2024/01/rv-capital-logo-bw.svg"
-                alt="Chronos - RV Capital" class="logo" />
-          <h1 class="app-title">TickerQ Dashboard</h1>
+          <img src="https://www.rvcapital.com/wp-content/uploads/2024/01/rv-capital-logo-bw.svg" alt="CHRONOS" class="logo" />
+          <h1 class="app-title">CHRONOS Dashboard</h1>
         </div>
         <p class="login-subtitle">Please authenticate to access the dashboard</p>
       </div>
@@ -24,7 +23,7 @@
 
       <!-- Basic Auth Form -->
       <v-form
-        v-if="authMode === 'basic' || authMode === 'customlogin'"
+        v-if="(authMode === 'basic' || authMode === 'customlogin')"
         ref="form"
         @submit.prevent="handleLogin"
         class="login-form"
@@ -75,7 +74,7 @@
 
         <div class="auth-help-text">
           <v-icon size="small" class="mr-1">mdi-information-outline</v-icon>
-          Enter your dashboard credentials to access TickerQ
+          Enter your dashboard credentials to access CHRONOS
         </div>
       </v-form>
 

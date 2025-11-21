@@ -2,37 +2,36 @@
  * Utility functions for resolving paths using the TickerQ configuration
  */
 
-
 /**
  * Resolve a path relative to the TickerQ base path
  * @param path - The path to resolve (can be relative or absolute)
  * @returns The resolved path
  */
 export function resolvePath(path: string): string {
-  const config = window.TickerQConfig;
-  
+  const config = window.TickerQConfig
+
   if (!config) {
-    console.warn('TickerQ configuration not found, using path as-is');
-    return path;
+    console.warn('TickerQ configuration not found, using path as-is')
+    return path
   }
 
   // If path is already absolute (starts with http/https), return as-is
   if (path.startsWith('http://') || path.startsWith('https://')) {
-    return path;
+    return path
   }
 
   // If path starts with /, it's an absolute path from the base
   if (path.startsWith('/')) {
-    return `${config.basePath}${path}`;
+    return `${config.basePath}${path}`
   }
 
   // If path starts with ./ or ../, it's a relative path
   if (path.startsWith('./') || path.startsWith('../')) {
-    return `${config.basePath}/${path}`;
+    return `${config.basePath}/${path}`
   }
 
   // Otherwise, treat as relative to base path
-  return `${config.basePath}/${path}`;
+  return `${config.basePath}/${path}`
 }
 
 /**
@@ -41,25 +40,25 @@ export function resolvePath(path: string): string {
  * @returns The full API URL
  */
 export function resolveApiUrl(endpoint: string): string {
-  const config = window.TickerQConfig;
-  
+  const config = window.TickerQConfig
+
   if (!config) {
-    console.warn('TickerQ configuration not found, using endpoint as-is');
-    return endpoint;
+    console.warn('TickerQ configuration not found, using endpoint as-is')
+    return endpoint
   }
 
   // Remove leading slash if present
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-  
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint
+
   // If backend domain is configured, use it for API calls
   if (config.backendDomain) {
-    const protocol = getProtocolFromDomain(config.backendDomain);
-    const cleanDomain = getCleanDomain(config.backendDomain);
-    return `${protocol}://${cleanDomain}/api/${cleanEndpoint}`;
+    const protocol = getProtocolFromDomain(config.backendDomain)
+    const cleanDomain = getCleanDomain(config.backendDomain)
+    return `${protocol}://${cleanDomain}/api/${cleanEndpoint}`
   }
-  
+
   // Otherwise, use the base path (relative to current domain)
-  return `${config.basePath}/api/${cleanEndpoint}`;
+  return `${config.basePath}/api/${cleanEndpoint}`
 }
 
 /**
@@ -67,8 +66,8 @@ export function resolveApiUrl(endpoint: string): string {
  * @returns The base path or '/' as fallback
  */
 export function getBasePath(): string {
-  const config = window.TickerQConfig;
-  return config?.basePath || '/';
+  const config = window.TickerQConfig
+  return config?.basePath || '/'
 }
 
 /**
@@ -76,15 +75,15 @@ export function getBasePath(): string {
  * @returns The full backend URL or null if not configured
  */
 export function getBackendUrl(): string | null {
-  const config = window.TickerQConfig;
-  
+  const config = window.TickerQConfig
+
   if (!config?.backendDomain) {
-    return null;
+    return null
   }
-  
-  const protocol = getProtocolFromDomain(config.backendDomain);
-  const cleanDomain = getCleanDomain(config.backendDomain);
-  return `${protocol}://${cleanDomain}`;
+
+  const protocol = getProtocolFromDomain(config.backendDomain)
+  const cleanDomain = getCleanDomain(config.backendDomain)
+  return `${protocol}://${cleanDomain}`
 }
 
 /**
@@ -92,48 +91,48 @@ export function getBackendUrl(): string | null {
  * @returns The API base URL or '/api' as fallback
  */
 export function getApiBaseUrl(): string {
-  const config = window.TickerQConfig;
-  
+  const config = window.TickerQConfig
+
   if (!config) {
-    return '/api';
+    return '/api'
   }
-  
+
   // If backend domain is configured, use it for API calls
   if (config.backendDomain) {
-    const protocol = getProtocolFromDomain(config.backendDomain);
-    const cleanDomain = getCleanDomain(config.backendDomain);
-    return `${protocol}://${cleanDomain}/api`;
+    const protocol = getProtocolFromDomain(config.backendDomain)
+    const cleanDomain = getCleanDomain(config.backendDomain)
+    return `${protocol}://${cleanDomain}/api`
   }
-  
+
   // Otherwise, use the base path (relative to current domain)
-  return `${config.basePath}/api`;
+  return `${config.basePath}/api`
 }
 
 export function isBasicAuthEnabled(): boolean {
-  const config = window.TickerQConfig;
-  return config?.auth?.mode === 'basic' || false;
+  const config = window.TickerQConfig
+  return config?.auth?.mode === 'basic' || false
 }
 
 export function isApiKeyAuthEnabled(): boolean {
-  const config = window.TickerQConfig;
-  return config?.auth?.mode === 'apikey' || false;
+  const config = window.TickerQConfig
+  return config?.auth?.mode === 'apikey' || false
 }
 
 export function isHostAuthEnabled(): boolean {
-  const config = window.TickerQConfig;
-  return config?.auth?.mode === 'host' || false;
+  const config = window.TickerQConfig
+  return config?.auth?.mode === 'host' || false
 }
 
 export function requiresAuthentication(): boolean {
-  const config = window.TickerQConfig;
-  return config?.auth?.enabled || false;
+  const config = window.TickerQConfig
+  return config?.auth?.enabled || false
 }
 
-export function getAuthMode(): 'basic' | 'apikey' | 'host' | 'none' {
-  const config = window.TickerQConfig;
-  if (!config?.auth) return 'none';
-  
-  return config.auth.mode as 'basic' | 'apikey' | 'host' | 'none';
+export function getAuthMode(): 'basic' | 'apikey' | 'host' | 'none' | 'customlogin' {
+  const config = window.TickerQConfig
+  if (!config?.auth) return 'none'
+
+  return config.auth.mode as 'basic' | 'apikey' | 'host' | 'none' | 'customlogin'
 }
 
 /**
@@ -143,9 +142,9 @@ export function getAuthMode(): 'basic' | 'apikey' | 'host' | 'none' {
  */
 function getProtocolFromDomain(domain: string): string {
   if (domain.startsWith('ssl:')) {
-    return 'https';
+    return 'https'
   }
-  return 'http';
+  return 'http'
 }
 
 /**
@@ -155,9 +154,9 @@ function getProtocolFromDomain(domain: string): string {
  */
 function getCleanDomain(domain: string): string {
   if (domain.startsWith('ssl:')) {
-    return domain.substring(4); // Remove 'ssl:' prefix
+    return domain.substring(4) // Remove 'ssl:' prefix
   }
-  return domain;
+  return domain
 }
 
 /**
@@ -165,5 +164,5 @@ function getCleanDomain(domain: string): string {
  * @returns True if configuration is available
  */
 export function hasConfig(): boolean {
-  return !!window.TickerQConfig;
+  return !!window.TickerQConfig
 }

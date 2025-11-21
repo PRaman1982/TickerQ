@@ -25,16 +25,16 @@ public interface IAuthService
 public class AuthResult
 {
     public bool IsAuthenticated { get; set; }
-    public string? Username { get; set; }
-    public string? ErrorMessage { get; set; }
+    public string Username { get; set; }
+    public string ErrorMessage { get; set; }
 
-    public static AuthResult Success(string? username = null) => new()
+    public static AuthResult Success(string username = null) => new()
     {
         IsAuthenticated = true,
         Username = username ?? "user"
     };
 
-    public static AuthResult Failure(string? errorMessage = null) => new()
+    public static AuthResult Failure(string errorMessage = null) => new()
     {
         IsAuthenticated = false,
         ErrorMessage = errorMessage ?? "Authentication failed"
@@ -49,5 +49,5 @@ public class AuthInfo
     public AuthMode Mode { get; set; }
     public bool IsEnabled { get; set; }
     public int SessionTimeoutMinutes { get; set; }
-    public string? CustomLoginUrl { get; set; }
+    public string CustomLoginUrl { get; set; }
 }

@@ -15,6 +15,7 @@ public class AuthConfig
     /// <summary>
     /// Basic authentication credentials (Base64 encoded username:password)
     /// </summary>
+#nullable enable
     public string? BasicCredentials { get; set; }
 
     /// <summary>
@@ -55,8 +56,6 @@ public class AuthConfig
                 throw new InvalidOperationException("ApiKey is required for ApiKey authentication mode");
             case AuthMode.CustomLogin when string.IsNullOrEmpty(CustomLoginUrl):
                 throw new InvalidOperationException("CustomLoginUrl is required for CustomLogin authentication mode");
-            case AuthMode.CustomLogin when CustomValidator == null:
-                throw new InvalidOperationException("CustomValidator is required for CustomLogin authentication mode");
             case AuthMode.Custom when CustomValidator == null:
                 throw new InvalidOperationException("CustomValidator is required for Custom authentication mode");
         }
