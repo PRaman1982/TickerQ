@@ -12,30 +12,30 @@ public class DashboardOptionsBuilder
     internal string BasePath { get; set; } = "/tickerq/dashboard";
     internal Action<CorsPolicyBuilder> CorsPolicyBuilder { get; set; }
     internal string BackendDomain { get; set; }
-    
+
     // Clean authentication system
     internal AuthConfig Auth { get; set; } = new();
-    
+
     // Custom Middleware Integration
     public Action<IApplicationBuilder> CustomMiddleware { get; set; }
     public Action<IApplicationBuilder> PreDashboardMiddleware { get; set; }
     public Action<IApplicationBuilder> PostDashboardMiddleware { get; set; }
-    
+
     /// <summary>
     /// JsonSerializerOptions specifically for Dashboard API endpoints.
     /// Separate from request serialization options to prevent user configuration from breaking dashboard APIs.
     /// </summary>
     internal JsonSerializerOptions DashboardJsonOptions { get; set; }
-    
+
     public void SetCorsPolicy(Action<CorsPolicyBuilder> corsPolicyBuilder)
         => CorsPolicyBuilder = corsPolicyBuilder;
-    
+
     public void SetBasePath(string basePath)
         => BasePath = basePath;
-    
+
     public void SetBackendDomain(string backendDomain)
         => BackendDomain = backendDomain;
-    
+
     /// <summary>Configure no authentication (public dashboard)</summary>
     public DashboardOptionsBuilder WithNoAuth()
     {
@@ -50,7 +50,7 @@ public class DashboardOptionsBuilder
         Auth.BasicCredentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
         return this;
     }
-    
+
     /// <summary>Enable API Key authentication (sent as Bearer token)</summary>
     public DashboardOptionsBuilder WithApiKey(string apiKey)
     {
@@ -58,14 +58,14 @@ public class DashboardOptionsBuilder
         Auth.ApiKey = apiKey;
         return this;
     }
-    
+
     /// <summary>Use the host application's existing authentication system</summary>
     public DashboardOptionsBuilder WithHostAuthentication()
     {
         Auth.Mode = AuthMode.Host;
         return this;
     }
-    
+
     /// <summary>Configure custom authentication with validation function</summary>
     public DashboardOptionsBuilder WithCustomAuth(Func<string, bool> validator)
     {
@@ -73,14 +73,21 @@ public class DashboardOptionsBuilder
         Auth.CustomValidator = validator;
         return this;
     }
-    
+
     /// <summary>Set session timeout in minutes</summary>
     public DashboardOptionsBuilder WithSessionTimeout(int minutes)
     {
         Auth.SessionTimeoutMinutes = minutes;
         return this;
     }
-    
+
+    public DashboardOptionsBuilder WithCustomLogin(string loginPath)
+    {
+        Auth.Mode = AuthMode.CustomLogin;
+        Auth.CustomLoginUrl = loginPath;
+        return this;
+    }
+
     /// <summary>
     /// Configure JSON serialization options for Dashboard API endpoints.
     /// These are separate from request serialization to maintain dashboard integrity.
@@ -93,7 +100,7 @@ public class DashboardOptionsBuilder
         configure?.Invoke(DashboardJsonOptions);
         return this;
     }
-    
+
     /// <summary>Validate the authentication configuration</summary>
     internal void Validate()
     {

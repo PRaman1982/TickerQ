@@ -286,14 +286,14 @@ const handleForceUIUpdate = () => {
           <div class="header-left">
             <div class="logo-container clickable" @click="navigateToDashboard">
               <img
-                src="https://arcenox.com/assets/imgs/main/arcenox-logo.svg"
-                alt="Arcenox"
+                src="https://www.rvcapital.com/wp-content/uploads/2024/01/rv-capital-logo-bw.svg"
+                alt="Chronos - RV Capital"
                 class="logo-image"
               />
             </div>
             <div class="app-title-container clickable" @click="navigateToDashboard">
               <h1 class="app-title">
-                <strong>TickerQ</strong>
+                <strong>CHRONOS</strong>
               </h1>
             </div>
 

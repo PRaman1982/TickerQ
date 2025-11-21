@@ -45,7 +45,7 @@ public class AuthService : IAuthService
                 AuthMode.Basic => await AuthenticateBasicAsync(authHeader),
                 AuthMode.ApiKey => await AuthenticateApiKeyAsync(authHeader),
                 AuthMode.Custom => await AuthenticateCustomAsync(authHeader),
-                AuthMode.CustomLogin => await AuthenticateCustomAsync(authHeader),
+                AuthMode.CustomLogin => await AuthenticateHostAsync(context),
                 AuthMode.Host => await AuthenticateHostAsync(context),
                 _ => AuthResult.Failure("Invalid authentication mode")
             };
@@ -67,7 +67,7 @@ public class AuthService : IAuthService
             CustomLoginUrl = _config.CustomLoginUrl
         };
     }
-
+#nullable enable
     private string? GetAuthorizationValue(HttpContext context)
     {
         // Try Authorization header first

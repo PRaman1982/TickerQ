@@ -40,10 +40,10 @@ namespace TickerQ.Dashboard.DependencyInjection
                     config.DashboardJsonOptions.Converters.Add(new StringToByteArrayConverter());
                 }
             }
-            
+
             // Register the dashboard configuration for DI
             services.AddSingleton(config);
-            
+
             services.AddRouting();
             services.AddSignalR();
 
@@ -82,7 +82,7 @@ namespace TickerQ.Dashboard.DependencyInjection
                     OnPrepareResponse = ctx =>
                     {
                         // Cache static assets for 1 hour
-                        if (ctx.File.Name.EndsWith(".js") || ctx.File.Name.EndsWith(".css") || 
+                        if (ctx.File.Name.EndsWith(".js") || ctx.File.Name.EndsWith(".css") ||
                             ctx.File.Name.EndsWith(".ico") || ctx.File.Name.EndsWith(".png"))
                         {
                             ctx.Context.Response.Headers.CacheControl = "public,max-age=3600";
@@ -159,9 +159,10 @@ namespace TickerQ.Dashboard.DependencyInjection
             {
                 mode = config.Auth.Mode.ToString().ToLower(),
                 enabled = config.Auth.IsEnabled,
-                sessionTimeout = config.Auth.SessionTimeoutMinutes
+                sessionTimeout = config.Auth.SessionTimeoutMinutes,
+                customLoginUrl = config.Auth.CustomLoginUrl
             };
-            
+
             var envConfig = new
             {
                 basePath,
