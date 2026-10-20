@@ -8,6 +8,7 @@ import { useDashboardStore } from '../../stores/dashboardStore'
 import { useConnectionStore } from '../../stores/connectionStore'
 import { useTimeZoneStore } from '@/stores/timeZoneStore'
 import AuthHeader from '../common/AuthHeader.vue'
+import defaultLogo from '@/assets/arcenox-logo.svg'
 
 const navigationLinks = [
   { icon: 'mdi-view-dashboard', text: 'Dashboard', path: '/' },
@@ -38,6 +39,13 @@ const isTimeZoneMenuOpen = ref(false)
 
 // Router
 const router = useRouter()
+
+// Branding (injected via server or fetched at runtime)
+const branding = ref<any>(
+  (typeof window !== 'undefined' && (window as any).TickerQConfig?.branding) ||
+  (typeof window !== 'undefined' && (window as any).branding) ||
+  { name: 'TickerQ', logo: defaultLogo, favicon: './arcenox-logo.svg' }
+)
 
 // Lazy-loaded stores and services
 let tickerService: any = null
@@ -274,6 +282,9 @@ const handleForceUIUpdate = () => {
   connectionStore.forceUIUpdate()
 }
 
+// Current year for footer
+const currentYear = new Date().getFullYear()
+
 
 </script>
 
@@ -286,14 +297,14 @@ const handleForceUIUpdate = () => {
             <div class="header-left">
             <div class="logo-container clickable" @click="navigateToDashboard">
               <img
-                src="@/assets/arcenox-logo.svg"
-                alt="Arcenox"
+                :src="branding.logo"
+                :alt="branding.name || 'Logo'"
                 class="logo-image"
               />
             </div>
             <div class="app-title-container clickable" @click="navigateToDashboard">
               <h1 class="app-title">
-                <strong>TickerQ</strong>
+                <strong>{{ branding.name }}</strong>
               </h1>
             </div>
 
@@ -522,7 +533,7 @@ const handleForceUIUpdate = () => {
       <div class="footer-content">
         <v-divider class="footer-divider" thickness="2" width="50"></v-divider>
         <div class="footer-text">
-          2025 — <strong>Arcenox</strong>
+          {{ currentYear }} — <strong>{{ branding.name }}</strong>
         </div>
       </div>
     </v-footer>

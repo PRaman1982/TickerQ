@@ -14,7 +14,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   showLoginForm: true,
   showUserInfo: true,
-  showLogout: true
+  showLogout: true,
 })
 
 // Emits
@@ -25,15 +25,7 @@ const emit = defineEmits<{
 
 // Auth stores and composables
 const authStore = useAuthStore()
-const {
-  isAuthenticated,
-  username,
-  isLoading,
-  errorMessage,
-  login,
-  logout,
-  clearError
-} = useAuth()
+const { isAuthenticated, username, isLoading, errorMessage, login, logout, clearError } = useAuth()
 
 // Import alert composable for demonstration
 import { useAlert } from '@/composables/useAlert'
@@ -60,6 +52,12 @@ const isHostAuthEnabled = computed(() => {
 
 const requiresAuth = computed(() => {
   return window.TickerQConfig?.auth?.enabled || false
+})
+
+// If the host configured a custom unauthorized redirect URL, the dashboard
+// should not show its own login form — the host handles authentication.
+const hasExternalLogin = computed(() => {
+  return !!window.TickerQConfig?.auth?.unauthorizedRedirectUrl
 })
 
 const authMode = computed(() => {
@@ -95,15 +93,15 @@ const handleLogin = async () => {
     } else if (authMode.value === 'bearer') {
       authStore.credentials.apiKey = localApiKey.value
     }
-    
+
     // Attempt login
     const success = await authStore.login()
-    
+
     if (success) {
       isLoginFormVisible.value = false
       showSuccess('Login successful!')
       emit('login', true)
-      
+
       // Clear local form fields
       localUsername.value = ''
       localPassword.value = ''
@@ -122,7 +120,7 @@ const handleLogout = async () => {
   try {
     // Use auth store logout for all modes
     authStore.logout()
-    
+
     showInfo('Logged out successfully')
     emit('logout')
   } catch (error) {
@@ -156,7 +154,7 @@ watch(isAuthenticated, (newValue) => {
 <template>
   <div class="auth-header">
     <!-- Login Form -->
-    <div v-if="!isAuthenticated && showLoginForm" class="auth-section">
+    <div v-if="!isAuthenticated && showLoginForm && !hasExternalLogin" class="auth-section">
       <div v-if="!shouldShowLoginForm" class="login-prompt">
         <v-btn
           color="primary"
@@ -169,22 +167,17 @@ watch(isAuthenticated, (newValue) => {
           Login
         </v-btn>
       </div>
-      
+
       <div v-else class="login-form">
         <div v-if="requiresAuth" class="auth-notice">
-          <v-alert
-            type="info"
-            variant="tonal"
-            density="compact"
-            class="info-alert"
-          >
+          <v-alert type="info" variant="tonal" density="compact" class="info-alert">
             <span v-if="authMode === 'basic'">Basic Authentication Required</span>
             <span v-else-if="authMode === 'bearer'">API Key Authentication Required</span>
             <span v-else-if="authMode === 'host'">Host Authentication Required</span>
             <span v-else>Authentication Required</span>
           </v-alert>
         </div>
-        
+
         <div class="form-row">
           <!-- Basic Auth Fields -->
           <template v-if="authMode === 'basic'">
@@ -210,7 +203,7 @@ watch(isAuthenticated, (newValue) => {
               @keyup.enter="handleLogin"
             />
           </template>
-          
+
           <!-- Bearer Token Field -->
           <template v-else-if="authMode === 'bearer'">
             <v-text-field
@@ -232,7 +225,10 @@ watch(isAuthenticated, (newValue) => {
             size="small"
             @click="handleLogin"
             :loading="isLoading"
-            :disabled="(authMode === 'basic' && (!localUsername || !localPassword)) || (authMode === 'bearer' && !localApiKey)"
+            :disabled="
+              (authMode === 'basic' && (!localUsername || !localPassword)) ||
+              (authMode === 'bearer' && !localApiKey)
+            "
             class="submit-btn"
           >
             <v-icon start>mdi-login</v-icon>
@@ -249,7 +245,7 @@ watch(isAuthenticated, (newValue) => {
             Cancel
           </v-btn>
         </div>
-        
+
         <!-- Error Message -->
         <div v-if="errorMessage" class="error-message">
           <v-alert
@@ -424,13 +420,13 @@ watch(isAuthenticated, (newValue) => {
   .login-form {
     min-width: 300px;
   }
-  
+
   .form-row {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
   }
-  
+
   .username-field,
   .password-field,
   .api-key-field {
@@ -442,9 +438,9 @@ watch(isAuthenticated, (newValue) => {
   .login-form {
     min-width: 250px;
   }
-  
+
   .auth-header {
     gap: 12px;
   }
 }
-</style> 
+</style>

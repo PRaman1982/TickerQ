@@ -162,19 +162,26 @@ namespace TickerQ.Dashboard.DependencyInjection
 
             var frontendBasePath = CombinePathBase(pathBase, basePath);
 
-            // Build the config object
+            // Build the runtime config object (includes branding)
             var authInfo = new
             {
                 mode = config.Auth.Mode.ToString().ToLower(),
                 enabled = config.Auth.IsEnabled,
-                sessionTimeout = config.Auth.SessionTimeoutMinutes
+                sessionTimeout = config.Auth.SessionTimeoutMinutes,
+                unauthorizedRedirectUrl = config.UnauthorizedRedirectUrl
             };
-            
+
             var envConfig = new
             {
                 basePath = frontendBasePath,
                 backendDomain = config.BackendDomain,
-                auth = authInfo
+                auth = authInfo,
+                branding = new
+                {
+                    name = config.BrandName,
+                    logo = config.BrandLogoPath,
+                    favicon = config.BrandFaviconPath
+                }
             };
 
             // Serialize without over-escaping, but make sure it won't break </script>

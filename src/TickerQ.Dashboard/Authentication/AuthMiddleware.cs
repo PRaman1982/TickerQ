@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TickerQ.Dashboard;
 
 namespace TickerQ.Dashboard.Authentication;
 
@@ -49,8 +50,27 @@ public class AuthMiddleware
         if (!authResult.IsAuthenticated)
         {
             _logger.LogWarning("Authentication failed for {Path}: {Error}", path, authResult.ErrorMessage);
+
+            var config = context.RequestServices.GetService<DashboardOptionsBuilder>();
+            var redirectUrl = config?.UnauthorizedRedirectUrl;
+
+            // Check if this is a browser navigation request (not XHR/fetch)
+            var isXhr = context.Request.Headers["X-Requested-With"].ToString() == "XMLHttpRequest";
+            var accept = context.Request.Headers["Accept"].ToString() ?? string.Empty;
+            var isBrowserNav = !isXhr && accept.Contains("text/html");
+
+            // For browser navigation requests from API, redirect if configured
+            if (!string.IsNullOrEmpty(redirectUrl) && isBrowserNav && !context.Response.HasStarted)
+            {
+                context.Response.StatusCode = 302;
+                context.Response.Headers["Location"] = redirectUrl;
+                return;
+            }
+
+            // API/XHR request - return 401 with JSON
             context.Response.StatusCode = 401;
-            await context.Response.WriteAsync("Unauthorized");
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync("{\"error\":\"Unauthorized\"}");
             return;
         }
 

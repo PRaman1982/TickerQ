@@ -64,3 +64,24 @@ import { useConnectionStore } from './stores/connectionStore'
 const connectionStore = useConnectionStore()
 ;(window as any).connectionStore = connectionStore
 
+// Fetch branding configuration from server and apply
+fetch('/api/branding')
+  .then(res => res.ok ? res.json() : null)
+  .then((branding: any) => {
+    if (!branding) return;
+    if (branding.name) document.title = branding.name;
+    if (branding.favicon) {
+      let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = branding.favicon;
+    }
+    (window as any).branding = branding;
+  })
+  .catch(() => {
+    // ignore failures and fall back to static assets
+  });
+

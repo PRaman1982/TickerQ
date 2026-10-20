@@ -59,6 +59,12 @@ public static class DashboardEndpoints
         // API endpoints are automatically protected when auth is enabled
             
         // Options endpoint
+        // Branding endpoint
+        apiGroup.MapGet("/branding", GetBranding)
+            .WithName("GetBranding")
+            .WithSummary("Get dashboard branding configuration");
+
+        // Options endpoint
         apiGroup.MapGet("/options", GetOptions<TTimeTicker, TCronTicker>)
             .WithName("GetOptions")
             .WithSummary("Get dashboard options and status");
@@ -233,6 +239,19 @@ public static class DashboardEndpoints
         }
 
         return Results.Unauthorized();
+    }
+    
+    private static IResult GetBranding(DashboardOptionsBuilder dashboardOptions)
+    {
+        var response = new
+        {
+            name = dashboardOptions.BrandName,
+            logo = dashboardOptions.BrandLogoPath,
+            favicon = dashboardOptions.BrandFaviconPath,
+            basePath = dashboardOptions.BasePath
+        };
+
+        return Results.Json(response, dashboardOptions.DashboardJsonOptions);
     }
     
 
@@ -508,7 +527,8 @@ public static class DashboardEndpoints
         
         return Results.Json(new { 
             success = result.IsSucceeded, 
-            message = result.IsSucceeded ? "Cron ticker added successfully" : "Failed to add cron ticker",
+            //message = result.IsSucceeded ? "Cron ticker added successfully" : "Failed to add cron ticker",
+            message = result.Exception,
             tickerId = result.Result?.Id
         }, dashboardOptions.DashboardJsonOptions);
     }

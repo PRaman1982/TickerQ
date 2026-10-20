@@ -27,6 +27,17 @@ public class DashboardOptionsBuilder
     /// </summary>
     internal JsonSerializerOptions DashboardJsonOptions { get; set; }
     
+    // Branding
+    internal string BrandName { get; set; } = "TickerQ";
+    internal string BrandLogoPath { get; set; } = "./arcenox-logo.svg";
+    internal string BrandFaviconPath { get; set; } = "./arcenox-logo.svg";
+    
+    // When set, API responses with 403 will redirect to this URL
+    internal string ForbiddenRedirectUrl { get; set; }
+    
+    // When set, unauthenticated (401) requests from browsers will be redirected here
+    internal string UnauthorizedRedirectUrl { get; set; }
+    
     public void SetCorsPolicy(Action<CorsPolicyBuilder> corsPolicyBuilder)
         => CorsPolicyBuilder = corsPolicyBuilder;
     
@@ -93,6 +104,41 @@ public class DashboardOptionsBuilder
     {
         DashboardJsonOptions ??= new JsonSerializerOptions();
         configure?.Invoke(DashboardJsonOptions);
+        return this;
+    }
+
+    /// <summary>Set the displayed application name for the dashboard UI</summary>
+    public DashboardOptionsBuilder WithBrandName(string name)
+    {
+        BrandName = name;
+        return this;
+    }
+
+    /// <summary>Set the logo path (relative to the dashboard wwwroot)</summary>
+    public DashboardOptionsBuilder WithBrandLogo(string logoPath)
+    {
+        BrandLogoPath = logoPath;
+        return this;
+    }
+
+    /// <summary>Set the favicon path (relative to the dashboard wwwroot)</summary>
+    public DashboardOptionsBuilder WithFavicon(string faviconPath)
+    {
+        BrandFaviconPath = faviconPath;
+        return this;
+    }
+
+    /// <summary>Set an optional redirect URL for 403 (forbidden) responses</summary>
+    public DashboardOptionsBuilder WithForbiddenRedirect(string url)
+    {
+        ForbiddenRedirectUrl = url;
+        return this;
+    }
+
+    /// <summary>Set an optional redirect URL for 401 (unauthorized) responses</summary>
+    public DashboardOptionsBuilder WithUnauthorizedRedirect(string url)
+    {
+        UnauthorizedRedirectUrl = url;
         return this;
     }
     

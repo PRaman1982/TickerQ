@@ -6,39 +6,41 @@
 declare global {
   interface Window {
     TickerQConfig?: {
-      basePath: string;
-      backendDomain?: string;
+      basePath: string
+      backendDomain?: string
       auth: {
-        mode: string;
-        enabled: boolean;
-        sessionTimeout: number;
-      };
-    };
+        mode: string
+        enabled: boolean
+        sessionTimeout: number
+        unauthorizedRedirectUrl?: string
+      }
+    }
   }
 }
 
 export interface AuthConfig {
-  mode: 'none' | 'basic' | 'apikey' | 'host' | 'custom';
-  enabled: boolean;
-  sessionTimeout: number;
+  mode: 'none' | 'basic' | 'apikey' | 'host' | 'custom'
+  enabled: boolean
+  sessionTimeout: number
+  unauthorizedRedirectUrl?: string
 }
 
 export interface AuthStatus {
-  authenticated: boolean;
-  username?: string;
-  message?: string;
+  authenticated: boolean
+  username?: string
+  message?: string
 }
 
 export interface LoginCredentials {
-  username?: string;
-  password?: string;
-  apiKey?: string;
-  hostAccessKey?: string;
+  username?: string
+  password?: string
+  apiKey?: string
+  hostAccessKey?: string
 }
 
 class AuthService {
-  private config: AuthConfig | null = null;
-  private status: AuthStatus = { authenticated: false };
+  private config: AuthConfig | null = null
+  private status: AuthStatus = { authenticated: false }
 
   /**
    * Initialize authentication service
@@ -46,37 +48,64 @@ class AuthService {
   async initialize(): Promise<void> {
     try {
       // Get auth configuration from window (injected by backend)
-      const windowConfig = window.TickerQConfig?.auth;
-      
+      const windowConfig = window.TickerQConfig?.auth
+      console.log('🔑 [AuthService] window.TickerQConfig:', JSON.stringify(window.TickerQConfig))
+      console.log('🔑 [AuthService] Auth config from window:', JSON.stringify(windowConfig))
+
       if (!windowConfig) {
-        throw new Error('No auth configuration found');
+        throw new Error('No auth configuration found')
       }
-      
+
       this.config = {
         mode: windowConfig.mode as 'none' | 'basic' | 'apikey' | 'host' | 'custom',
         enabled: windowConfig.enabled,
-        sessionTimeout: windowConfig.sessionTimeout
-      };
-      
+        sessionTimeout: windowConfig.sessionTimeout,
+        unauthorizedRedirectUrl: windowConfig.unauthorizedRedirectUrl,
+      }
+      console.log('🔑 [AuthService] Parsed config:', JSON.stringify(this.config))
+
       // If no auth required, set as authenticated
       if (!this.config.enabled) {
-        this.status = { authenticated: true, username: 'anonymous' };
-        return;
+        console.log('🔑 [AuthService] Auth NOT enabled - setting as anonymous')
+        this.status = { authenticated: true, username: 'anonymous' }
+        return
       }
 
+      // If host configured an external redirect URL, authentication is handled
+      // via cookies (set by the host app). Validate with the backend API which
+      // will receive the cookie automatically, instead of checking localStorage.
+      if (this.config.unauthorizedRedirectUrl) {
+        console.log(
+          '🔑 [AuthService] Has unauthorizedRedirectUrl - validating with backend via cookie...',
+        )
+        try {
+          const result = await this.validateCredentials()
+          console.log('🔑 [AuthService] Validation result:', JSON.stringify(result))
+          this.status = result
+        } catch (err) {
+          console.error('🔑 [AuthService] Validation error:', err)
+          // Validation failed - user is not authenticated
+          this.status = { authenticated: false, message: 'Please log in' }
+        }
+        return
+      }
+
+      console.log('🔑 [AuthService] Checking localStorage for stored credentials...')
       // For now, just check if we have stored credentials without validating
       // This prevents hanging on API calls during initialization
       if (this.hasStoredCredentials()) {
         // Set as authenticated for now - validation will happen on first API call
-        const username = this.getStoredUsername();
-        this.status = { authenticated: true, username: username || 'user' };
+        const username = this.getStoredUsername()
+        console.log('🔑 [AuthService] Found stored credentials for:', username)
+        this.status = { authenticated: true, username: username || 'user' }
       } else {
+        console.log('🔑 [AuthService] No stored credentials - user needs to log in')
         // No stored credentials - user needs to log in
-        this.status = { authenticated: false, message: 'Please log in' };
+        this.status = { authenticated: false, message: 'Please log in' }
       }
     } catch (error) {
-      console.error('Auth initialization failed:', error);
-      this.status = { authenticated: false, message: 'Authentication service unavailable' };
+      console.error('🔑 [AuthService] Auth initialization failed:', error)
+      this.status = { authenticated: false, message: 'Authentication service unavailable' }
     }
   }
 
@@ -86,28 +115,28 @@ class AuthService {
   async login(credentials: LoginCredentials): Promise<boolean> {
     try {
       if (!this.config?.enabled) {
-        return true;
+        return true
       }
 
       // Store credentials based on auth mode
-      this.storeCredentials(credentials);
+      this.storeCredentials(credentials)
 
       // Validate with backend
-      const result = await this.validateCredentials();
-      
+      const result = await this.validateCredentials()
+
       if (result.authenticated) {
-        this.status = result;
-        return true;
+        this.status = result
+        return true
       }
 
       // Clear invalid credentials
-      this.clearCredentials();
-      this.status = result;
-      return false;
+      this.clearCredentials()
+      this.status = result
+      return false
     } catch (error) {
-      console.error('Login failed:', error);
-      this.status = { authenticated: false, message: 'Login failed' };
-      return false;
+      console.error('Login failed:', error)
+      this.status = { authenticated: false, message: 'Login failed' }
+      return false
     }
   }
 
@@ -115,29 +144,29 @@ class AuthService {
    * Logout
    */
   logout(): void {
-    this.clearCredentials();
-    this.status = { authenticated: false };
+    this.clearCredentials()
+    this.status = { authenticated: false }
   }
 
   /**
    * Get current authentication status
    */
   getStatus(): AuthStatus {
-    return { ...this.status };
+    return { ...this.status }
   }
 
   /**
    * Get authentication configuration
    */
   getConfig(): AuthConfig | null {
-    return this.config ? { ...this.config } : null;
+    return this.config ? { ...this.config } : null
   }
 
   /**
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
-    return this.status.authenticated;
+    return this.status.authenticated
   }
 
   /**
@@ -145,24 +174,24 @@ class AuthService {
    */
   getAuthHeader(): string | null {
     if (!this.config?.enabled) {
-      return null;
+      return null
     }
 
     switch (this.config.mode) {
       case 'basic':
-        const basicAuth = localStorage.getItem('tickerq_basic_auth');
-        return basicAuth ? `Basic ${basicAuth}` : null;
-      
+        const basicAuth = localStorage.getItem('tickerq_basic_auth')
+        return basicAuth ? `Basic ${basicAuth}` : null
+
       case 'apikey':
-        const apiKey = localStorage.getItem('tickerq_api_key');
-        return apiKey ? `Bearer ${apiKey}` : null;
-      
+        const apiKey = localStorage.getItem('tickerq_api_key')
+        return apiKey ? `Bearer ${apiKey}` : null
+
       case 'host':
-        const hostAccessKey = localStorage.getItem('tickerq_host_access_key');
-        return hostAccessKey || null;
-      
+        const hostAccessKey = localStorage.getItem('tickerq_host_access_key')
+        return hostAccessKey || null
+
       default:
-        return null;
+        return null
     }
   }
 
@@ -171,61 +200,61 @@ class AuthService {
    */
   getAccessToken(): string | null {
     if (!this.config?.enabled) {
-      return null;
+      return null
     }
 
     switch (this.config.mode) {
       case 'basic':
-        return localStorage.getItem('tickerq_basic_auth');
-      
+        return localStorage.getItem('tickerq_basic_auth')
+
       case 'apikey':
-        const token = localStorage.getItem('tickerq_api_key');
-        return token ? `Bearer:${token}` : null;
-      
+        const token = localStorage.getItem('tickerq_api_key')
+        return token ? `Bearer:${token}` : null
+
       case 'host':
-        const hostToken = localStorage.getItem('tickerq_host_access_key');
-        return hostToken || null;
-      
+        const hostToken = localStorage.getItem('tickerq_host_access_key')
+        return hostToken || null
+
       default:
-        return null;
+        return null
     }
   }
 
-
   private async validateCredentials(): Promise<AuthStatus> {
     try {
-      const authHeader = this.getAuthHeader();
-      
+      const authHeader = this.getAuthHeader()
+
       // Get the correct base URL with base path
-      const config = window.TickerQConfig;
-      const baseUrl = config?.backendDomain || config?.basePath || '/tickerq/dashboard';
-      const url = `${baseUrl}/api/auth/validate`;
-      
+      const config = window.TickerQConfig
+      const baseUrl = config?.backendDomain || config?.basePath || '/tickerq/dashboard'
+      const url = `${baseUrl}/api/auth/validate`
+
       // Add timeout to prevent hanging
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-      
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+
       const response = await fetch(url, {
         method: 'POST',
-        headers: authHeader ? { 'Authorization': authHeader } : {},
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
+        headers: authHeader ? { Authorization: authHeader } : {},
+        signal: controller.signal,
+        credentials: 'include',
+      })
+
+      clearTimeout(timeoutId)
 
       if (response.ok) {
-        const result = await response.json();
+        const result = await response.json()
         return {
           authenticated: result.authenticated,
           username: result.username,
-          message: result.message
-        };
+          message: result.message,
+        }
       }
 
-      return { authenticated: false, message: `Server error: ${response.status}` };
+      return { authenticated: false, message: `Server error: ${response.status}` }
     } catch (error) {
-      console.error('Credential validation failed:', error);
-      return { authenticated: false, message: 'Validation failed' };
+      console.error('Credential validation failed:', error)
+      return { authenticated: false, message: 'Validation failed' }
     }
   }
 
@@ -233,64 +262,66 @@ class AuthService {
    * Validate stored credentials (public method)
    */
   async validateStoredCredentials(): Promise<void> {
-    const result = await this.validateCredentials();
-    this.status = result;
-    
+    const result = await this.validateCredentials()
+    this.status = result
+
     if (!result.authenticated) {
-      this.clearCredentials();
+      this.clearCredentials()
     }
   }
 
   private hasStoredCredentials(): boolean {
-    return !!(localStorage.getItem('tickerq_basic_auth') || 
-              localStorage.getItem('tickerq_api_key') ||
-              localStorage.getItem('tickerq_host_access_key'));
+    return !!(
+      localStorage.getItem('tickerq_basic_auth') ||
+      localStorage.getItem('tickerq_api_key') ||
+      localStorage.getItem('tickerq_host_access_key')
+    )
   }
 
   private getStoredUsername(): string | null {
-    const basicAuth = localStorage.getItem('tickerq_basic_auth');
+    const basicAuth = localStorage.getItem('tickerq_basic_auth')
     if (basicAuth) {
       try {
-        const decoded = atob(basicAuth);
-        return decoded.split(':')[0];
+        const decoded = atob(basicAuth)
+        return decoded.split(':')[0]
       } catch {
-        return null;
+        return null
       }
     }
-    return null;
+    return null
   }
 
   private storeCredentials(credentials: LoginCredentials): void {
-    this.clearCredentials();
+    this.clearCredentials()
 
     switch (this.config?.mode) {
       case 'basic':
         if (credentials.username && credentials.password) {
-          const encoded = btoa(`${credentials.username}:${credentials.password}`);
-          localStorage.setItem('tickerq_basic_auth', encoded);
+          const encoded = btoa(`${credentials.username}:${credentials.password}`)
+          localStorage.setItem('tickerq_basic_auth', encoded)
         }
-        break;
-      
+        break
+
       case 'apikey':
         if (credentials.apiKey) {
-          localStorage.setItem('tickerq_api_key', credentials.apiKey);
+          localStorage.setItem('tickerq_api_key', credentials.apiKey)
         }
-        break;
-      
+        break
+
       case 'host':
         if (credentials.hostAccessKey) {
-          localStorage.setItem('tickerq_host_access_key', credentials.hostAccessKey);
+          localStorage.setItem('tickerq_host_access_key', credentials.hostAccessKey)
         }
-        break;
+        break
     }
   }
 
   private clearCredentials(): void {
-    localStorage.removeItem('tickerq_basic_auth');
-    localStorage.removeItem('tickerq_api_key');
-    localStorage.removeItem('tickerq_host_access_key');
+    localStorage.removeItem('tickerq_basic_auth')
+    localStorage.removeItem('tickerq_api_key')
+    localStorage.removeItem('tickerq_host_access_key')
   }
 }
 
 // Export singleton instance
-export const authService = new AuthService();
+export const authService = new AuthService()
